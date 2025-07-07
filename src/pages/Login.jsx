@@ -2,7 +2,9 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Eye, EyeOff, Shield, Mail, Lock } from "lucide-react";
-import bgImage from "../assets/metal6.jpg"; // your background image
+import bgImage from "../assets/metal6.jpg";
+
+const baseURL = import.meta.env.VITE_PUBLIC_API_URL;
 
 const Login = () => {
   const navigate = useNavigate();
@@ -19,7 +21,7 @@ const Login = () => {
     try {
       console.log("🔁 Logging in...");
 
-      const res = await axios.post("http://localhost:5000/api/auth/login", {
+      const res = await axios.post(`${baseURL}/api/auth/login`, {
         email,
         password,
       });

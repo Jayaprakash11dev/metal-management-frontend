@@ -1,30 +1,7 @@
-// import React from "react";
-// import PurityForm from "../components/PurityForm";
-// import RateForm from "../components/RateForm";
-// import RateTable from "../components/RateTable";
-
-// const Dashboard = () => {
-//   return (
-//     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 text-gray-800 p-6">
-//       <h1 className="text-3xl font-bold text-center mb-8">Metal Rate Dashboard</h1>
-
-//       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-//         <PurityForm />
-//         <RateForm />
-//       </div>
-
-//       <RateTable />
-//     </div>
-//   );
-// };
-
-// export default Dashboard;
-
 import React, { useState, useEffect } from "react";
 import {
   TrendingUp,
   Plus,
-  Edit3,
   Trash2,
   Shield,
   BarChart3,
@@ -33,10 +10,7 @@ import {
   Bell,
   User,
   Search,
-  Filter,
   Download,
-  Eye,
-  EyeOff,
   Coins,
   Award,
   DollarSign,
@@ -44,49 +18,9 @@ import {
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-// Mock data - replace with your actual API calls
-const mockPurities = [
-  { _id: "1", metal: "Gold", value: "22K", activeStatus: "Active" },
-  { _id: "2", metal: "Gold", value: "24K", activeStatus: "Active" },
-  { _id: "3", metal: "Silver", value: "92.5%", activeStatus: "Active" },
-  { _id: "4", metal: "Platinum", value: "95%", activeStatus: "Deactive" },
-];
 
-const mockRates = [
-  {
-    _id: "1",
-    metal: "Gold",
-    purityId: { value: "22K" },
-    rate: 6250,
-    date: "2025-01-07T10:30:00Z",
-    activeStatus: "Active",
-  },
-  {
-    _id: "2",
-    metal: "Gold",
-    purityId: { value: "24K" },
-    rate: 6850,
-    date: "2025-01-07T10:25:00Z",
-    activeStatus: "Active",
-  },
-  {
-    _id: "3",
-    metal: "Silver",
-    purityId: { value: "92.5%" },
-    rate: 85,
-    date: "2025-01-07T10:20:00Z",
-    activeStatus: "Active",
-  },
-  {
-    _id: "4",
-    metal: "Platinum",
-    purityId: { value: "95%" },
-    rate: 3200,
-    date: "2025-01-07T10:15:00Z",
-    activeStatus: "Deactive",
-  },
-];
 
+const baseURL = import.meta.env.VITE_PUBLIC_API_URL;
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [purities, setPurities] = useState([]);
@@ -102,8 +36,8 @@ const Dashboard = () => {
   });
   const [searchTerm, setSearchTerm] = useState("");
   const [filterMetal, setFilterMetal] = useState("All");
-  const navigate = useNavigate();
 
+  const navigate = useNavigate();
   const token = localStorage.getItem("token");
   const stats = [
     { title: "Total Metals", value: "3", icon: Coins, color: "bg-blue-500" },
@@ -133,85 +67,198 @@ const Dashboard = () => {
   }, []);
 
   const loadPurities = async () => {
+    setLoading(true);
     try {
-      const res = await axios.get("http://localhost:5000/api/purities", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setPurities(res.data);
+      const response = await fetch(
+        `${baseURL}/api/purities`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const res = await response.json();
+      console.log("Purities response:", res);
+
+      // Fix: Access the data property from the response
+      setPurities(res.data || []);
     } catch (err) {
-      console.error("Failed to load purities");
+      console.error("Failed to load purities:", err);
+      alert("Failed to load purities. Please check your connection.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const loadRates = async () => {
+    setLoading(true);
     try {
-      const res = await axios.get(
-        "http://localhost:5000/api/rates/history?metal=Gold",
+      // Get the first purity ID for the default query
+      const firstPurityId = purities.length > 0 ? purities[0]._id : "";
+
+      const response = await fetch(
+        `${baseURL}/api/rates/history?metal=Gold${
+          firstPurityId ? `&purityId=${firstPurityId}` : ""
+        }`,
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         }
       );
-      setRates(res.data);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const res = await response.json();
+      console.log("Rates response:", res);
+
+      // Fix: Access the data property from the response
+      setRates(res.data || []);
     } catch (err) {
-      console.error("Failed to load rates");
+      console.error("Failed to load rates:", err);
+      alert("Failed to load rates. Please check your connection.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handlePuritySubmit = async (e) => {
     e.preventDefault();
+    if (!purityForm.value.trim()) {
+      alert("Please enter a purity value");
+      return;
+    }
+
+    setLoading(true);
     try {
-      await axios.post("http://localhost:5000/api/purities", purityForm, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await fetch(
+        `${baseURL}/api/purities`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(purityForm),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const res = await response.json();
+      console.log("Add purity response:", res);
+
       setPurityForm({ metal: "Gold", value: "" });
       loadPurities();
+      alert("Purity added successfully!");
     } catch (err) {
-      alert("Failed to add purity");
+      console.error("Failed to add purity:", err);
+      alert("Failed to add purity. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleRateSubmit = async (e) => {
     e.preventDefault();
+    if (!rateForm.purityId || !rateForm.rate) {
+      alert("Please fill in all fields");
+      return;
+    }
+
+    setLoading(true);
     try {
       const data = {
         metal: rateForm.metal,
         purityId: rateForm.purityId,
         rate: Number(rateForm.rate),
       };
-      await axios.post("http://localhost:5000/api/rates", data, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+
+      const response = await fetch(
+        `${baseURL}/api/rates`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const res = await response.json();
+      console.log("Add rate response:", res);
+
       setRateForm({ metal: "Gold", purityId: "", rate: "" });
       loadRates();
+      alert("Rate added successfully!");
     } catch (err) {
-      alert("Failed to add rate");
+      console.error("Failed to add rate:", err);
+      alert("Failed to add rate. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleDelete = async (id, type) => {
     if (!window.confirm("Are you sure you want to delete?")) return;
+
+    setLoading(true);
     try {
+      const endpoint = type === "purity" ? "purities" : "rates";
+      const response = await fetch(
+        `${baseURL}/api/${endpoint}/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       if (type === "purity") {
-        await axios.delete(`/purities/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
         loadPurities();
       } else {
-        await axios.delete(`/rates/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
         loadRates();
       }
+      alert(`${type} deleted successfully!`);
     } catch (err) {
-      alert("Failed to delete");
+      console.error(`Failed to delete ${type}:`, err);
+      alert(`Failed to delete ${type}. Please try again.`);
+    } finally {
+      setLoading(false);
     }
   };
 
   const filteredRates = rates.filter((rate) => {
+    // Add safety checks for nested objects
+    const purityValue = rate.purityId?.value || "";
+    const metalName = rate.metal || "";
+
     const matchesSearch =
-      rate.purityId.value.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rate.metal.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterMetal === "All" || rate.metal === filterMetal;
+      purityValue.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      metalName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterMetal === "All" || metalName === filterMetal;
     return matchesSearch && matchesFilter;
   });
 
@@ -254,6 +301,7 @@ const Dashboard = () => {
           <button
             onClick={() => handleDelete(purity._id, "purity")}
             className="p-1 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+            disabled={loading}
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -262,10 +310,15 @@ const Dashboard = () => {
     </div>
   );
 
-  const logoutFunction = () =>{
-    localStorage.removeItem("token")
-    navigate('/')
-  }
+  const logoutFunction = () => {
+    // Remove token from localStorage and redirect
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.removeItem("token");
+      navigate("/");
+    }
+    // In a real app, you'd use navigate('/') here
+    alert("Logged out successfully!");
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -312,8 +365,11 @@ const Dashboard = () => {
         </nav>
 
         <div className="absolute bottom-6 left-4 right-4">
-          <button className="w-full flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors" onClick={logoutFunction}>
-            <LogOut className="w-5 h-5"  />
+          <button
+            className="w-full flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+            onClick={logoutFunction}
+          >
+            <LogOut className="w-5 h-5" />
             <span className="font-medium">Logout</span>
           </button>
         </div>
@@ -345,22 +401,6 @@ const Dashboard = () => {
               </div>
 
               <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  />
-                </div>
-                <button className="p-2 rounded-lg hover:bg-gray-100 relative">
-                  <Bell className="w-6 h-6 text-gray-600" />
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
-                    3
-                  </span>
-                </button>
                 <button className="p-2 rounded-lg hover:bg-gray-100">
                   <User className="w-6 h-6 text-gray-600" />
                 </button>
