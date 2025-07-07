@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   TrendingUp,
   Plus,
@@ -7,18 +7,16 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  Bell,
   User,
-  Search,
   Download,
   Coins,
   Award,
   DollarSign,
+  Camera,
+  Pencil,
 } from "lucide-react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-
-
 
 const baseURL = import.meta.env.VITE_PUBLIC_API_URL;
 const Dashboard = () => {
@@ -27,6 +25,11 @@ const Dashboard = () => {
   const [rates, setRates] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [editId, setEditId] = useState(null);
+  const [editMetal, setEditMetal] = useState("Gold");
+  const [editValue, setEditValue] = useState("");
+  const metals = ["Gold", "Silver", "Platinum"];
 
   const [purityForm, setPurityForm] = useState({ metal: "Gold", value: "" });
   const [rateForm, setRateForm] = useState({
@@ -69,15 +72,12 @@ const Dashboard = () => {
   const loadPurities = async () => {
     setLoading(true);
     try {
-      const response = await fetch(
-        `${baseURL}/api/purities`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await fetch(`${baseURL}/api/purities`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -86,7 +86,6 @@ const Dashboard = () => {
       const res = await response.json();
       console.log("Purities response:", res);
 
-      // Fix: Access the data property from the response
       setPurities(res.data || []);
     } catch (err) {
       console.error("Failed to load purities:", err);
@@ -99,7 +98,6 @@ const Dashboard = () => {
   const loadRates = async () => {
     setLoading(true);
     try {
-      // Get the first purity ID for the default query
       const firstPurityId = purities.length > 0 ? purities[0]._id : "";
 
       const response = await fetch(
@@ -121,7 +119,6 @@ const Dashboard = () => {
       const res = await response.json();
       console.log("Rates response:", res);
 
-      // Fix: Access the data property from the response
       setRates(res.data || []);
     } catch (err) {
       console.error("Failed to load rates:", err);
@@ -140,17 +137,14 @@ const Dashboard = () => {
 
     setLoading(true);
     try {
-      const response = await fetch(
-        `${baseURL}/api/purities`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(purityForm),
-        }
-      );
+      const response = await fetch(`${baseURL}/api/purities`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(purityForm),
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -185,17 +179,14 @@ const Dashboard = () => {
         rate: Number(rateForm.rate),
       };
 
-      const response = await fetch(
-        `${baseURL}/api/rates`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(data),
-        }
-      );
+      const response = await fetch(`${baseURL}/api/rates`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -221,16 +212,13 @@ const Dashboard = () => {
     setLoading(true);
     try {
       const endpoint = type === "purity" ? "purities" : "rates";
-      const response = await fetch(
-        `${baseURL}/api/${endpoint}/${id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await fetch(`${baseURL}/api/${endpoint}/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -251,7 +239,6 @@ const Dashboard = () => {
   };
 
   const filteredRates = rates.filter((rate) => {
-    // Add safety checks for nested objects
     const purityValue = rate.purityId?.value || "";
     const metalName = rate.metal || "";
 
@@ -288,7 +275,7 @@ const Dashboard = () => {
             <p className="text-sm text-gray-600">{purity.value}</p>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2">
           <span
             className={`px-2 py-1 text-xs rounded-full ${
               purity.activeStatus === "Active"
@@ -299,24 +286,61 @@ const Dashboard = () => {
             {purity.activeStatus}
           </span>
           <button
-            onClick={() => handleDelete(purity._id, "purity")}
-            className="p-1 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-            disabled={loading}
+            onClick={() => {
+              setEditId(purity._id);
+              setEditMetal(purity.metal);
+              setEditValue(purity.value);
+              setIsOpen(true);
+            }}
+            className="p-1 hover:bg-blue-50 rounded-lg transition-colors"
+            title="Edit"
           >
-            <Trash2 className="w-4 h-4" />
+            <Pencil className="w-4 h-4 text-blue-500" />
+          </button>
+
+          <button
+            onClick={() => handleDelete(purity._id, "purity")}
+            className="p-1 hover:bg-red-50 rounded-lg transition-colors"
+            disabled={loading}
+            title="Delete"
+          >
+            <Trash2 className="w-4 h-4 text-red-500" />
           </button>
         </div>
       </div>
     </div>
   );
 
+  const handleEdit = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.put(
+        `${baseURL}/api/purities/${editId}`,
+        {
+          metal: editMetal,
+          value: editValue,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      await loadPurities(); // reload list after update
+      setIsOpen(false);
+    } catch (err) {
+      console.error("Update failed:", err);
+      alert("Failed to update purity");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const logoutFunction = () => {
-    // Remove token from localStorage and redirect
     if (typeof window !== "undefined" && window.localStorage) {
       localStorage.removeItem("token");
       navigate("/");
     }
-    // In a real app, you'd use navigate('/') here
     alert("Logged out successfully!");
   };
 
@@ -605,104 +629,112 @@ const Dashboard = () => {
               </div>
 
               {/* Rates Table */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">Rate History</h3>
-                  <div className="flex items-center space-x-4">
-                    <select
-                      value={filterMetal}
-                      onChange={(e) => setFilterMetal(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    >
-                      <option value="All">All Metals</option>
-                      <option value="Gold">Gold</option>
-                      <option value="Silver">Silver</option>
-                      <option value="Platinum">Platinum</option>
-                    </select>
-                    <button className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center space-x-2">
-                      <Download className="w-4 h-4" />
-                      <span>Export</span>
-                    </button>
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold">Rate History</h3>
+                    <div className="flex items-center space-x-4">
+                      <select
+                        value={filterMetal}
+                        onChange={(e) => setFilterMetal(e.target.value)}
+                        className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      >
+                        <option value="All">All Metals</option>
+                        <option value="Gold">Gold</option>
+                        <option value="Silver">Silver</option>
+                        <option value="Platinum">Platinum</option>
+                      </select>
+                      <button className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center space-x-2">
+                        <Download className="w-4 h-4" />
+                        <span>Export</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="bg-gray-50">
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Metal
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Purity
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Rate
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Date
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Edit
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {filteredRates.map((rate) => (
+                          <tr key={rate._id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
+                                  <Coins className="w-4 h-4 text-yellow-600" />
+                                </div>
+                                <span className="font-medium text-gray-900">
+                                  {rate.metal}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {rate.purityId.value}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              ₹{rate.rate}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {new Date(rate.date).toLocaleDateString("en-IN", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span
+                                className={`px-2 py-1 text-xs rounded-full ${
+                                  rate.activeStatus === "Active"
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-red-100 text-red-800"
+                                }`}
+                              >
+                                {rate.activeStatus}
+                              </span>
+                            </td>
+                            <td>
+                              <button>
+                                <Pencil className="w-4 h-4  text-blue-500" />
+                              </button>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              <button
+                                onClick={() => handleDelete(rate._id, "rate")}
+                                className="text-red-600 hover:text-red-900 hover:bg-red-50 p-1 rounded transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-gray-50">
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Metal
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Purity
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Rate
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Date
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredRates.map((rate) => (
-                        <tr key={rate._id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
-                                <Coins className="w-4 h-4 text-yellow-600" />
-                              </div>
-                              <span className="font-medium text-gray-900">
-                                {rate.metal}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {rate.purityId.value}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            ₹{rate.rate}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {new Date(rate.date).toLocaleDateString("en-IN", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span
-                              className={`px-2 py-1 text-xs rounded-full ${
-                                rate.activeStatus === "Active"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-red-100 text-red-800"
-                              }`}
-                            >
-                              {rate.activeStatus}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <button
-                              onClick={() => handleDelete(rate._id, "rate")}
-                              className="text-red-600 hover:text-red-900 hover:bg-red-50 p-1 rounded transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
             </div>
           )}
 
@@ -714,6 +746,54 @@ const Dashboard = () => {
           )}
         </main>
       </div>
+
+      {isOpen && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl w-xl p-6 shadow-lg space-y-4">
+            <h2 className="text-lg font-semibold text-gray-800">Edit Purity</h2>
+
+            <div className="space-y-2">
+              <label className="text-sm text-gray-600">Metal</label>
+              <select
+                value={editMetal}
+                onChange={(e) => setEditMetal(e.target.value)}
+                className="w-full p-2 border rounded-md"
+              >
+                {metals.map((metal) => (
+                  <option key={metal} value={metal}>
+                    {metal}
+                  </option>
+                ))}
+              </select>
+
+              <label className="text-sm text-gray-600">Value</label>
+              <input
+                type="text"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                className="w-full p-2 border rounded-md"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                onClick={() => setIsOpen(false)}
+                className="hover:text-white px-4 py-1 hover:bg-gray-600 bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                onClick={handleEdit}
+                disabled={loading}
+                className="bg-gradient-to-r from-amber-500 to-orange-600 text-white px-4 py-1 rounded-mdhover:from-amber-600 hover:to-orange-700"
+              >
+                {loading ? "Saving..." : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

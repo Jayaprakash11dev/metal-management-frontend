@@ -48,7 +48,7 @@ const Login = () => {
       className="min-h-screen bg-cover bg-center bg-no-repeat relative flex items-center justify-center"
       style={{ backgroundImage: `url(${bgImage})` }}
     >
-      {/* Overlay */}
+
       <div className="absolute inset-0 bg-black/50" />
       <div className="absolute inset-0 bg-gradient-to-br from-amber-900/20 via-transparent to-orange-900/20" />
 
