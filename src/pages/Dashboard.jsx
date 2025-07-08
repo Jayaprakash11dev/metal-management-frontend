@@ -91,7 +91,6 @@ const Dashboard = () => {
       setPurities(res.data || []);
     } catch (err) {
       console.error("Failed to load purities:", err);
-      alert("Failed to load purities. Please check your connection.");
     } finally {
       setLoading(false);
     }
@@ -124,7 +123,6 @@ const Dashboard = () => {
       setRates(res.data || []);
     } catch (err) {
       console.error("Failed to load rates:", err);
-      alert("Failed to load rates. Please check your connection.");
     } finally {
       setLoading(false);
     }
@@ -160,7 +158,6 @@ const Dashboard = () => {
       alert("Purity added successfully!");
     } catch (err) {
       console.error("Failed to add purity:", err);
-      alert("Failed to add purity. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -203,7 +200,6 @@ const Dashboard = () => {
       alert("Rate added successfully!");
     } catch (err) {
       console.error("Failed to add rate:", err);
-      alert("Failed to add rate. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -235,7 +231,6 @@ const Dashboard = () => {
       alert(`${type} deleted successfully!`);
     } catch (err) {
       console.error(`Failed to delete ${type}:`, err);
-      alert(`Failed to delete ${type}. Please try again.`);
     } finally {
       setLoading(false);
     }
@@ -288,27 +283,37 @@ const Dashboard = () => {
           >
             {purity.activeStatus}
           </span>
-          <button
-            onClick={() => {
-              setEditId(purity._id);
-              setEditMetal(purity.metal);
-              setEditValue(purity.value);
-              setIsOpen(true);
-            }}
-            className="p-1 hover:bg-blue-50 rounded-lg transition-colors"
-            title="Edit"
-          >
-            <Pencil className="w-4 h-4 text-blue-500" />
-          </button>
+          {purity.activeStatus === "Active" && (
+            <button
+              onClick={() => {
+                setEditId(purity._id);
+                setEditMetal(purity.metal);
+                setEditValue(purity.value);
+                setIsOpen(true);
+              }}
+              className="p-1 hover:bg-blue-50 rounded-lg transition-colors"
+              title="Edit"
+            >
+              <Pencil className="w-4 h-4 text-blue-500" />
+            </button>
+          )}
 
-          <button
-            onClick={() => handleDelete(purity._id, "purity")}
-            className="p-1 hover:bg-red-50 rounded-lg transition-colors"
-            disabled={loading}
-            title="Delete"
-          >
-            <Trash2 className="w-4 h-4 text-red-500" />
-          </button>
+          {purity.activeStatus === "Active" && (
+            <button
+              onClick={() => handleDelete(purity._id, "purity")}
+              className="p-1 hover:bg-red-50 rounded-lg transition-colors"
+              disabled={loading}
+              title="Delete"
+            >
+              <Trash2 className="w-4 h-4 text-red-500" />
+            </button>
+          )}
+          {purity.activeStatus === "Deactive" && (
+              <button className="p-1 hover:bg-red-50 rounded-lg transition-colors">
+                <CircleX className="w-5 h-4" />
+              </button>
+            
+          )}
         </div>
       </div>
     </div>
@@ -732,21 +737,23 @@ const Dashboard = () => {
                               {rate.activeStatus}
                             </span>
                           </td>
-                          { rate.activeStatus === 'Active' && <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <button
-                              onClick={() => handleDelete(rate._id, "rate")}
-                              className="text-red-600 hover:text-red-900 hover:bg-red-50 p-1 rounded transition-colors"
-                            >
+                          {rate.activeStatus === "Active" && (
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              <button
+                                onClick={() => handleDelete(rate._id, "rate")}
+                                className="text-red-600 hover:text-red-900 hover:bg-red-50 p-1 rounded transition-colors"
+                              >
                                 <Trash2 className="w-4 h-4" />
-                            </button>
-                          </td> }
-                          { rate.activeStatus === 'Deactive' &&
-                            <td className="px-6 py-4 whitespace-nowrap text-sm" >
+                              </button>
+                            </td>
+                          )}
+                          {rate.activeStatus === "Deactive" && (
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
                               <button className="text-gray rounded transition-colors">
                                 <CircleX className="w-5 h-4" />
                               </button>
                             </td>
-                          }
+                          )}
                         </tr>
                       ))}
                     </tbody>

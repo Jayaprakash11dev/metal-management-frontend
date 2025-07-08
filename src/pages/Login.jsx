@@ -62,9 +62,7 @@ const Login = () => {
           <h1 className="text-2xl font-bold text-white mb-1 drop-shadow-lg">
             Metal Management
           </h1>
-          <p className="text-gray-300 text-sm drop-shadow">
-            Professional Admin Portal
-          </p>
+        
         </div>
 
         <form
