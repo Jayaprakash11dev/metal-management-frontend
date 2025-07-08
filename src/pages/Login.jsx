@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Eye, EyeOff, Shield, Mail, Lock } from "lucide-react";
 import bgImage from "../assets/metal6.jpg";
+import { ToastContainer, toast } from "react-toastify";
 
 const baseURL = import.meta.env.VITE_PUBLIC_API_URL;
 
@@ -29,12 +30,12 @@ const Login = () => {
       const token = res?.data?.data?.token;
       if (token) {
         localStorage.setItem("token", token);
-        alert(res?.data?.message || "Login success");
+        toast.success("Login Successfully!")
 
         await new Promise((resolve) => setTimeout(resolve, 1000));
         navigate("/dashboard");
       } else {
-        alert("Login failed");
+        toast.error("Login Faild")
       }
     } catch (err) {
       alert(err?.response?.data?.message || "Login failed");
@@ -48,7 +49,6 @@ const Login = () => {
       className="min-h-screen bg-cover bg-center bg-no-repeat relative flex items-center justify-center"
       style={{ backgroundImage: `url(${bgImage})` }}
     >
-
       <div className="absolute inset-0 bg-black/50" />
       <div className="absolute inset-0 bg-gradient-to-br from-amber-900/20 via-transparent to-orange-900/20" />
 
@@ -176,6 +176,7 @@ const Login = () => {
           </p>
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 };
